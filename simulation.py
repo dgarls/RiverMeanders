@@ -9,21 +9,21 @@ y = [np.sin(xi/500) * 1000 for xi in x]
 z = [0 for i in range(500)]
 
 ## PARAMS
-W = 1 # avg channel width (m)
-D = 10 # avg channel depth (m)
-nit = 1 # number of iterations
-saved_ts = 1 # save centerline approximation every savedt iterations
-deltas = 1.0 # distance between nodes on centerline
+W = 200 # avg channel width (m)
+D = 6 # avg channel depth (m)
+nit = 1500 # number of iterations
+saved_ts = 20 # save centerline approximation every savedt iterations
+deltas = 50 # distance between nodes on centerline
 pad = 100 # number of node points along centerline
-crdist = 1 # (normal) distance between two stretches of river for a cutoff to occur (should be function of width?)
-depths = [D for i in range(pad)] # array-like of channel depths. Presumably for each node point?
-Cfs = [1 for i in range(pad)] # array-like of dimensionless Chezy friction factors
-kl = 1 # dimensionless migration rate constant
-kv = 1 # vertical slope-dependent erosion rate constant (m/s).
-dt = 1 # time step in seconds. Should definitely be way more than 1 second
+crdist = 2*W # (normal) distance between two stretches of river for a cutoff to occur (should be function of width?)
+depths = D * np.ones((nit,)) # array-like of channel depths. Presumably for each node point?
+Cfs = 0.011 * np.ones((nit,)) # array-like of dimensionless Chezy friction factors
+kl = 60.0/(365*24*60*60.0) # dimensionless migration rate constant
+kv = 1e-12 # vertical slope-dependent erosion rate constant (m/s).
+dt = 2*0.05*365*24*60*60.0 # time step in seconds. Should definitely be way more than 1 second
 dens = 1000 # density of fluid (kg/m^3) (i think 1000 for pure water)
 
-# initialize Channel object
+# initialize Channel object1 for i in range(pad)
 channel = mp.Channel(x, y, z, W, D)
 
 # initialize ChannelBelt object (simulation takes place in this thing)
@@ -36,6 +36,6 @@ channelBelt.migrate(nit, saved_ts, deltas, pad, crdist, depths, Cfs, kl, kv, dt,
 # plot simulation
 #pb_age is the age at which point bars become covered by vegetation
 #ob_age is the "          " oxbow lakes "                            '
-fig = channelBelt.plot('strat')
-plt.show()
-
+#fig = channelBelt.plot('strat')
+#plt.show()
+channelBelt.create_movie(0, 10000, 'morph', "RiverMeanders/movie.gif")
