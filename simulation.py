@@ -60,6 +60,12 @@ if xNew[0] > xNew[-1]:
     xNew = xNew[::-1]
     yNew = yNew[::-1]
 
+# normalize xOld and yOld arrays as they had huge values which was making stuff crash
+xOld = xOld - xOld[0]
+yOld = yOld - yOld[0]
+xNew = xNew - xNew[0]
+yNew = yNew - yNew[0]
+
 # bound the old data (which we have more of) by the region of new data (so both pieces of data cover the same region)
 offset = 0
 for i in range(len(xOld)):
@@ -90,12 +96,6 @@ plt.axis('scaled')
 plt.title("2023 Arkansas River planform")
 plt.savefig('initPlot2023.png')
 
-# normalize xOld and yOld arrays as they had huge values which was making stuff crash
-xOld = xOld - xOld[0]
-yOld = yOld - yOld[0]
-xNew = xNew - xNew[0]
-yNew = yNew - yNew[0]
-
 # estimate at z values
 startElev = 1430.0 # estimating starting elevation as 1430 meters which is the elevation of Pueblo
 avgSlope = 0.0026 # global average stream gradient is 2.6m/km
@@ -108,7 +108,6 @@ for i in range(1, len(xOld)):
     z[i] = z[i-1] - avgSlope*stepDist
 
 print(f"data read. beginning simulation")
-
 
 ## **SIMULATION**
 # initialize Channel object
