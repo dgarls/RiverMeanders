@@ -12,7 +12,7 @@ from shapely.ops import linemerge
 W = 175*12*2.54/100 # (175 ft) avg channel width (m) GUESSTIMATED FROM GOOGLE MAPS
 D = 4*12*2.54/100 # (4ft) avg channel depth (m) TAKEN FROM RANDOM FORUM THREAD [https://www.dragonsfoot.org/forums/viewtopic.php?t=58804]
 nit = 1000 # number of iterations
-saved_ts = 20 # save centerline approximation every savedt iterations
+saved_ts = 10 # save centerline approximation every savedt iterations
 deltas = W/2 # distance between nodes on centerline
 pad = 20 # affects straight channel padding at both ends of the river segment of interest. large padding = more straight channel assumed at both ends
 crdist = 2*W # (normal) distance between two stretches of river for a cutoff to occur (should be function of width)
@@ -132,7 +132,7 @@ plt.savefig('finalPlot.svg')
 print('resultant png saved.')
 
 # and/or plot entire simulation as gif
-channelBelt.create_movie(xNew[0]-100, xNew[-1]+100, 'age', "movie.gif", fps=6, scale_bar_length=500)
+channelBelt.create_movie(xNew[0]-100, xNew[-1]+100, 'age', "simulationResult.gif", fps=10, scale_bar_length=500)
 # channelBelt.create_movie(0, 10000, 'age', "movie.gif")
 print('resultant gif saved.')
 
