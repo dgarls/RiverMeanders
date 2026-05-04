@@ -20,5 +20,3 @@ if not arkansas.empty:
     print("Found and saved data successfully")
 else:
     print("No data found for given river in given bounds")
-
-os.remove('arkansas_high_res.tif')
