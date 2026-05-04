@@ -8,9 +8,10 @@ from shapely.ops import linemerge
 
 
 ## **PARAMS**
+## meanderpy params
 W = 175*12*2.54/100 # (175 ft) avg channel width (m) GUESSTIMATED FROM GOOGLE MAPS
 D = 4*12*2.54/100 # (4ft) avg channel depth (m) TAKEN FROM RANDOM FORUM THREAD [https://www.dragonsfoot.org/forums/viewtopic.php?t=58804]
-nit = 4300 # number of iterations
+nit = 1000 # number of iterations
 saved_ts = 20 # save centerline approximation every savedt iterations
 deltas = W/2 # distance between nodes on centerline
 pad = 20 # affects straight channel padding at both ends of the river segment of interest. large padding = more straight channel assumed at both ends
@@ -19,12 +20,15 @@ depths = D * np.ones((nit,)) # array-like of channel depths. Presumably for each
 Cfs = 0.011 * np.ones((nit,)) # array-like of dimensionless Chezy friction factors
 kl = 1.2e-7 # dimensionless migration rate constant
 kv = 1e-12 # vertical slope-dependent erosion rate constant (m/s).
-dt = 0.01*365*24*60*60.0 # time step in seconds. currently 0.01 years
+dt = 0.1*365*24*60*60.0 # time step in seconds. currently 0.1 years
 dens = 1000 # density of fluid (kg/m^3) (currently for pure water)
+## Local params
+startElev = 1430.0 # estimating starting elevation as 1430 meters which is the elevation of Pueblo
+avgSlope = 0.0026 # global average stream gradient is 2.6m/km (https://en.wikipedia.org/wiki/Stream_gradient)
+
 
 ## **LOAD DATA**
 print("beginning data extraction from file")
-## Read centerline data from file and do some coordinate conversion (I don't really know how this works)
 
 ## Load 1980 data {
 # the number after epsg might need to change if location changes
@@ -60,12 +64,6 @@ if xNew[0] > xNew[-1]:
     xNew = xNew[::-1]
     yNew = yNew[::-1]
 
-# normalize xOld and yOld arrays as they had huge values which was making stuff crash
-xOld = xOld - xOld[0]
-yOld = yOld - yOld[0]
-xNew = xNew - xNew[0]
-yNew = yNew - yNew[0]
-
 # bound the old data (which we have more of) by the region of new data (so both pieces of data cover the same region)
 offset = 0
 for i in range(len(xOld)):
@@ -74,44 +72,50 @@ for i in range(len(xOld)):
         yOld = np.delete(yOld, i - offset)
         offset += 1
 
+# normalize xOld and yOld arrays as they had huge values which was making stuff crash
+xOld = xOld - xOld[0]
+yOld = yOld - yOld[0]
+xNew = xNew - xNew[0]
+yNew = yNew - yNew[0]
+
+
+## **MAKE INITIAL PLOTS**
 # plot old & new data on same axes
 plt.plot(xOld, yOld)
 plt.axis('scaled')
 plt.plot(xNew, yNew)
 plt.title("Planforms of the Arkansas River east of Pueblo")
 plt.legend(['1980', '2023'], loc='upper center', prop={'size': 8})
-plt.savefig('initPlotCombined.png') # I like this better than plot.show() since I can look at the graph while the simulation is running
+plt.savefig('initPlotCombined.svg') # I like this better than plot.show() since I can look at the graph while the simulation is running
 
 # plot just old data
 plt.clf()
 plt.plot(xOld, yOld)
 plt.axis('scaled')
 plt.title("1980 Arkansas River planform")
-plt.savefig('initPlot1980.png')
+plt.savefig('initPlot1980.svg')
 
 # plot just new data
 plt.clf()
 plt.plot(xNew, yNew)
 plt.axis('scaled')
 plt.title("2023 Arkansas River planform")
-plt.savefig('initPlot2023.png')
+plt.savefig('initPlot2023.svg')
 
 # estimate at z values
-startElev = 1430.0 # estimating starting elevation as 1430 meters which is the elevation of Pueblo
-avgSlope = 0.0026 # global average stream gradient is 2.6m/km
-z = np.zeros(len(xOld))
+z = np.zeros(len(xNew))
 z[0] = startElev
-for i in range(1, len(xOld)):
+for i in range(1, len(xNew)):
     # find elevation of point i by finding distance from point i-1
     # and multiplying by slope (works well as rough estimate but assumes the river has constant gradient (in magnitude))
-    stepDist = np.sqrt((xOld[i] - xOld[i-1])**2 + (yOld[i] - yOld[i-1])**2)
+    stepDist = np.sqrt((xNew[i] - xNew[i-1])**2 + (yNew[i] - yNew[i-1])**2)
     z[i] = z[i-1] - avgSlope*stepDist
 
 print(f"data read. beginning simulation")
 
 ## **SIMULATION**
 # initialize Channel object
-channel = mp.Channel(xOld, yOld, z, W, D)
+channel = mp.Channel(xNew, yNew, z, W, D)
 
 # initialize ChannelBelt object (simulation takes place in this thing)
 # arguments: list of channels, list of cutoffs, age of channels, age of cutoffs (unsure of how we'd list cutoffs, probably unnecessary for us atm)
@@ -124,11 +128,12 @@ print('simulation complete. saving results ...')
          
 # plot final estimate
 fig = channelBelt.plot('age')
-plt.savefig('finalPlot.png')
+plt.savefig('finalPlot.svg')
 print('resultant png saved.')
 
 # and/or plot entire simulation as gif
-channelBelt.create_movie(0, 10000, 'strat', "movie.gif")
+channelBelt.create_movie(xNew[0]-100, xNew[-1]+100, 'age', "movie.gif", fps=6, scale_bar_length=500)
+# channelBelt.create_movie(0, 10000, 'age', "movie.gif")
 print('resultant gif saved.')
 
 print('enjoy your freshly meandered river')
